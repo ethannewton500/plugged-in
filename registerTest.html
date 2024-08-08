@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+</head>
+<body>
+    <h1>Register</h1>
+    <form id="registerForm">
+        <label for="firstname">First Name:</label>
+        <input type="text" id="firstname" name="firstname" required><br><br>
+
+        <label for="lastname">Last Name:</label>
+        <input type="text" id="lastname" name="lastname" required><br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <h1>Login</h1>
+    <form id="loginForm">
+        <label for="email">Email:</label>
+        <input type="email" id="loginEmail" name="email" required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="loginPassword" name="password" required><br><br>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <button id="deleteAccount">Delete Account</button>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = {
+                firstname: document.getElementById('firstname').value,
+                lastname: document.getElementById('lastname').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Registration successful!');
+                    localStorage.setItem('token', data.token);  // Store token
+                } else {
+                    alert('Registration failed: ' + data.msg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while registering.');
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value,
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Login successful!');
+                    localStorage.setItem('token', data.token);  // Store token
+                } else {
+                    alert('Login failed: ' + data.msg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while logging in.');
+            }
+        });
+
+        document.getElementById('deleteAccount').addEventListener('click', async function() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                alert('You need to log in first!');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Account deleted successfully!');
+                    localStorage.removeItem('token');  // Remove token
+                } else {
+                    alert('Account deletion failed: ' + data.msg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the account.');
+            }
+        });
+    </script>
+</body>
+</html>
