@@ -1,1 +1,6 @@
 .env
+esp32
+esp32/*
+esp32/.pio
+frontend
+frontend/*
