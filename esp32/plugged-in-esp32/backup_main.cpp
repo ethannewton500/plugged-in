@@ -1,12 +1,4 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <WebServer.h>
-
-#include "env_var.h"
-
-WebServer server(80);
-
-bool wifiConnected = false; 
 
 void checkButtons();
 void rainbowMode();
@@ -56,45 +48,8 @@ void setColorRGB(int red, int green, int blue) {
   ledcWrite(2, blue);
 }
 
-void handlePower() {
-  if (server.hasArg("power")) {
-    String power = server.arg("power");
-    if (power == "on") {
-      Serial.println("Power on");
-      setColor(colors[colorIndex]);
-      server.send(200, "application/json", "{\"power\": \"on\"}");
-    } else if (power == "off") {
-      Serial.println("Power off");
-      setColor(offValue);
-      server.send(200, "application/json", "{\"power\": \"off\"}");
-    }
-  } else {
-      if (offIndex == 0) {
-        offIndex = 1;
-        rainbowOn = false;
-        setColor(offValue);
-        server.send(200, "application/json", "{\"power\": \"off\"}");
-      } else {
-        offIndex = 0;
-        rainbowOn = false;
-        setColor(colors[colorIndex]);
-        server.send(200, "application/json", "{\"power\": \"on\"}");
-      }
-  }
-}
-
 void setup() {
   Serial.begin(115200);
-
-  delay(2000);
-
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting to WiFi");
-
-  server.on("/power", handlePower);
-
-  server.begin();
-  Serial.println("HTTP server started");
 
   pinMode(colorButtonPin, INPUT_PULLUP);
   pinMode(offButtonPin, INPUT_PULLUP);
@@ -202,22 +157,6 @@ void checkButtons() {
 }
 
 void loop() {
-  server.handleClient();
-
-  if (WiFi.status() == WL_CONNECTED) {
-    if (!wifiConnected) {
-      wifiConnected = true;
-      Serial.println("WiFi Connected");
-      Serial.print("IP address: ");
-      Serial.println(WiFi.localIP());
-    }
-  } else {
-    if (wifiConnected) {
-      wifiConnected = false;
-      Serial.println("Connecting to WiFi...");
-    }
-  }
-
   checkButtons();
   if (rainbowOn) {
     rainbowMode();
