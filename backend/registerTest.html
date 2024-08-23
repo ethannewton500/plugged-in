@@ -36,6 +36,20 @@
 
     <button id="deleteAccount">Delete Account</button>
 
+    <h1>Register Device</h1>
+    <form id="registerDevice">
+        <label for="deviceName">Device Name:</label>
+        <input type="text" id="deviceName" name="deviceName" required><br><br>
+
+        <label for="macAddress">MAC Address:</label>
+        <input type="text" id="macAddress" name="macAddress" required><br><br>
+
+        <button type="submit">Register Device</button>
+    </form>
+
+    <h1>Get Devices</h1>
+    <button id="getDevices">Get Devices</button>
+    
     <script>
         document.getElementById('registerForm').addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -61,6 +75,7 @@
                 if (response.ok) {
                     alert('Registration successful!');
                     localStorage.setItem('token', data.token);  // Store token
+                    localStorage.setItem('userId', data.userId);  // Store user
                 } else {
                     alert('Registration failed: ' + data.msg);
                 }
@@ -92,6 +107,8 @@
                 if (response.ok) {
                     alert('Login successful!');
                     localStorage.setItem('token', data.token);  // Store token
+                    localStorage.setItem('user', data.userId);  // Store user
+                    console.log(data);
                 } else {
                     alert('Login failed: ' + data.msg);
                 }
@@ -131,6 +148,40 @@
                 alert('An error occurred while deleting the account.');
             }
         });
+
+        document.getElementById("registerDevice").addEventListener('submit', async function() {
+            event.preventDefault();
+
+            const formData = {
+                user: localStorage.getItem('userId'),
+                name: document.getElementById('deviceName').value,
+                macAddress: document.getElementById('macAddress').value,
+            };
+
+            const oken = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/devices/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': localStorage.getItem('token'),
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Device registration successful!');
+                } else {
+                    alert('Device registration failed: ' + data.msg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while registering the device.');
+            }
+        })
     </script>
 </body>
 </html>

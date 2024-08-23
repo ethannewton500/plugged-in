@@ -1,15 +1,18 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ESPmDNS.h>
+#include <HTTPClient.h>
 
 #include "env_var.h"
 
 WebServer server(80);
 
-bool wifiConnected = false; 
+bool wifiConnected = false;
 
 void checkButtons();
 void rainbowMode();
+void checkWiFi();
 
 int redValue[3] = {255, 0, 0};
 int greenValue[3] = {0, 255, 0};
@@ -44,6 +47,8 @@ int r = 255;
 int g = 0;
 int b = 0;
 
+static String macAddress;
+
 void setColor(int color[3]) {
   ledcWrite(0, color[0]);
   ledcWrite(1, color[1]);
@@ -69,44 +74,51 @@ void handlePower() {
       server.send(200, "application/json", "{\"power\": \"off\"}");
     }
   } else {
-      if (offIndex == 0) {
-        offIndex = 1;
-        rainbowOn = false;
-        setColor(offValue);
-        server.send(200, "application/json", "{\"power\": \"off\"}");
-      } else {
-        offIndex = 0;
-        rainbowOn = false;
-        setColor(colors[colorIndex]);
-        server.send(200, "application/json", "{\"power\": \"on\"}");
-      }
+    if (offIndex == 0) {
+      offIndex = 1;
+      rainbowOn = false;
+      setColor(offValue);
+      server.send(200, "application/json", "{\"power\": \"off\"}");
+    } else {
+      offIndex = 0;
+      rainbowOn = false;
+      setColor(colors[colorIndex]);
+      server.send(200, "application/json", "{\"power\": \"on\"}");
+    }
   }
 }
 
 void setup() {
   Serial.begin(115200);
-
   delay(2000);
 
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi");
 
   server.on("/power", handlePower);
-
   server.begin();
   Serial.println("HTTP server started");
+
+  macAddress = WiFi.macAddress();
+  macAddress.replace(":", "");
+  Serial.println(macAddress);
+
+  if (!MDNS.begin(macAddress)) {
+    Serial.println("Error setting up MDNS responder!");
+  }
+  Serial.println("MDNS server started");
 
   pinMode(colorButtonPin, INPUT_PULLUP);
   pinMode(offButtonPin, INPUT_PULLUP);
   pinMode(rainbowButtonPin, INPUT_PULLUP);
 
-  ledcAttachPin(redPin, 0);
-  ledcAttachPin(greenPin, 1);
-  ledcAttachPin(bluePin, 2);
-
   ledcSetup(0, 5000, 8);
   ledcSetup(1, 5000, 8);
   ledcSetup(2, 5000, 8);
+
+  ledcAttachPin(redPin, 0);
+  ledcAttachPin(greenPin, 1);
+  ledcAttachPin(bluePin, 2);
 
   setColor(redValue);
 }
@@ -201,24 +213,36 @@ void checkButtons() {
   lastRainbowButtonState = rainbowButtonState;
 }
 
+void checkWiFi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected. Attempting to reconnect...");
+    WiFi.disconnect();
+    WiFi.begin(ssid, password);
+
+    unsigned long startAttemptTime = millis();
+
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
+      Serial.print(".");
+      delay(500);
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nReconnected to WiFi.");
+      Serial.print("IP address: ");
+      Serial.println(WiFi.localIP());
+    } else {
+      Serial.println("\nFailed to reconnect to WiFi.");
+    }
+  }
+}
+
 void loop() {
   server.handleClient();
 
-  if (WiFi.status() == WL_CONNECTED) {
-    if (!wifiConnected) {
-      wifiConnected = true;
-      Serial.println("WiFi Connected");
-      Serial.print("IP address: ");
-      Serial.println(WiFi.localIP());
-    }
-  } else {
-    if (wifiConnected) {
-      wifiConnected = false;
-      Serial.println("Connecting to WiFi...");
-    }
-  }
+  checkWiFi();
 
   checkButtons();
+
   if (rainbowOn) {
     rainbowMode();
   }
