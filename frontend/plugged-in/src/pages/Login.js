@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
+import { Link } from 'react-router-dom'
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ function Login() {
       if (response.ok) {
         alert('Login successful!');
         login(data.token, data.userId);
-        navigate('/devices');  // Redirect to Device Controls Page
+        navigate('/deviceControls');  // Redirect to Device Controls Page
       } else {
         alert('Login failed: ' + data.msg);
       }
@@ -44,6 +45,8 @@ function Login() {
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit">Login</button>
       </form>
+			<h2>Dont have an account?</h2>
+			<p><Link to="/register">Register</Link></p>
     </div>
   );
 }

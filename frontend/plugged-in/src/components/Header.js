@@ -1,12 +1,14 @@
-import React from "react";
+import React from 'react';
+import './Header.css'
+import { Link } from 'react-router-dom';
 
 function Header() {
-  return (
-    <div>
-      <h1>Home</h1>
-      <p>Welcome to the Header page!</p>
-    </div>
-  );
+	return (
+		<div className='header'>
+			<h1>Header</h1>
+      <p><Link to="/profile">User</Link></p>
+		</div>
+	);
 }
 
 export default Header;
